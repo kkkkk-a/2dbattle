@@ -804,36 +804,6 @@ function drawFighterForegroundAccessories(ctx, pWidth, pHeight, isActive, isTeet
 
     if (!registry || !partsVisibility) return;
 
-    const isAggressionPenalty = actor && actor.lastHitTimer && actor.aggressionStats && 
-                                (actor.lastHitTimer > actor.aggressionStats.graceFrames) && !actor.aggressionStats.disabled;
-
-    if (isAggressionPenalty) {
-        ctx.save();
-        if (typeof drawBaseShape === 'function') {
-            const tempShape = actor ? actor.shape : window.selectedShape;
-            drawBaseShape(ctx, -pWidth / 2, -pHeight / 2, pWidth, pHeight, tempShape);
-        }
-        ctx.clip();
-
-        const shockGrad = ctx.createLinearGradient(0, -pHeight / 2, 0, pHeight / 4);
-        shockGrad.addColorStop(0, 'rgba(70, 130, 180, 0.85)'); 
-        shockGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');          
-        ctx.fillStyle = shockGrad;
-        ctx.fillRect(-pWidth / 2 - 2, -pHeight / 2 - 2, pWidth + 4, pHeight + 4);
-
-        ctx.strokeStyle = 'rgba(0, 0, 80, 0.7)';
-        ctx.lineWidth = 1.6;
-
-        for (let lx = -pWidth / 2 + 3; lx < pWidth / 2; lx += 5) {
-            const lineYLength = pHeight * 0.45 + Math.sin(Date.now() * 0.016 + lx) * 3;
-            ctx.beginPath();
-            ctx.moveTo(lx, -pHeight / 2);
-            ctx.lineTo(lx, -pHeight / 2 + lineYLength);
-            ctx.stroke();
-        }
-        ctx.restore();
-    }
-
     // 💡 角 (HORNS)
     if (partsVisibility.horn) {
         ctx.save();

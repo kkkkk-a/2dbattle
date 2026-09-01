@@ -985,6 +985,7 @@ const allMovesDatabase = {
         startup: 11, active: 20, endlag: 15, damage: 4.5, kbScale: 1.5, angle: 270,
         width: 44, height: 65, offsetY: 30, attackerHitstop: 2, receiverHitstop: 3,
         isMultiHit: true, fastFallSpeed: 15,
+        actionType: 'giga_drill_meteor',
         weapon: { type: 'drill', color: '#cfd8dc', attach: 'foot' }
     },
     'air-smash-s-lightning-chain': {
@@ -2178,8 +2179,8 @@ const enemyDatabase = {
         powerFactor: 0.2,                       // 当たっても痛くない（20%の攻撃力）
         maxPercent: 20,                         // 蓄積20%で問答無用でK.O.バースト
         moves: {
-            close: ['normal-n'],             // 弱い体当たりのみ
-            far: ['normal-n']
+            close: ['normal-n-jab'],             // 弱い体当たりのみ
+            far: ['normal-n-jab']
         },
         parts: { eye: true, nose: false, mouth: false, mantle: false }
     },
@@ -2402,7 +2403,7 @@ const enemyDatabase = {
         moves: {
             close: ['sp_n_grab', 'sp_s_diving_press', 'air-smash-d-giga-drill'],
             // 💥 吸収バリア（sp_d_absorb）を装備させ、ハメ射撃を無力化する
-            far: ['sp_up_gravity_reverse', 'air-smash-neutral-sphere', 'sp_d_absorb']
+            far: ['sp_up_gravity_reverse', 'air-smash-n-sphere', 'sp_d_absorb']
         },
         // 💡 修正：重力渦には目や口を非表示にし、コアだけを点灯（eye: false, mouth: false, visor: true）
         parts: { eye: false, nose: false, mouth: false, visor: true, booster: true },

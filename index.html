@@ -694,6 +694,7 @@
         /* スライダー（つまみ）を大きく、操作しやすく調整 */
         .transformer-box input[type="range"] {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
             height: 10px;
             background: #222;
@@ -706,6 +707,7 @@
         /* クローム、サファリ用のスライダーつまみ設定 */
         .transformer-box input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
+            appearance: none;
             width: 20px;
             height: 20px;
             background: #ffcc00;
@@ -1233,7 +1235,7 @@
 
         <!-- トレーニングメニューパネル (テストモード時のみJSで表示制御) -->
         <div id="training-panel"
-            style="display: none; background: rgba(20, 10, 10, 0.95); border: 2px solid #ffcc00; padding: 10px; margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 15px; font-size: 13px;">
+            style="display: none; background: rgba(20, 10, 10, 0.95); border: 2px solid #ffcc00; padding: 10px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; gap: 15px; font-size: 13px;">
             <span style="color: #ffcc00; font-weight: bold;">TRAINING MENU:</span>
             <label style="color:#fff;">CPUアクション:
                 <select id="sel-training-ai" onchange="changeTrainingAI()"
@@ -1652,14 +1654,10 @@
                         </p>
 
                         <p style="margin-bottom: 10px;">
-                            <strong>■ SECTION 03: アグレッション・ディケイ（ビルド別消極ペナルティ）</strong><br>
-                            敵から逃げ回ったり、攻撃を当てずに時間を稼ぐ行為を抑止する環境システムです。<br>
-                            ・<strong>ビルド（ステータス）別の猶予時間</strong>:<br>
-                            　- <strong>スピード型ビルド</strong>: 猶予が<strong>2.5秒（150F）</strong>と短く、素早くペナルティを受けます。<br>
-                            　- <strong>標準ビルド</strong>: 猶予は<strong>5.0秒（300F）</strong>です。<br>
-                            　- <strong>パワー/重量型ビルド</strong>: 猶予が<strong>8.0秒（480F）</strong>と長く、じっくり立ち回れます。<br>
-                            　- <strong>鈍足ビルド（スピード補正8以下）</strong>: ペナルティが<strong>完全免除（無効化）</strong>されます。<br>
-                            ・<strong>解除方法</strong>: 敵に攻撃（通常技・飛び道具問わず）を1発ヒットさせることで即座に機動力が100%に全回復します。
+                            <strong>■ SECTION 03: 機動力・パフォーマンス安定仕様</strong><br>
+                            本作では、アスレチックや対戦の快適性を最優先するため、消極時間による機動力低下ペナルティは一切発生しません。<br>
+                            ・<strong>常時100%機動</strong>: カスタマイズで設定した地上速度・空中速度・ジャンプ力は、戦闘中いつでもフルパワーで維持されます。<br>
+                            ・<strong>差し合いの自由</strong>: じっくりと間合いを計ったり、敵の隙を待つ立ち回りもペナルティなく自由に行えます。
                         </p>
 
                         <p style="margin-bottom: 5px;">
@@ -1958,9 +1956,9 @@
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>被撃墜回数
                                 (Lost):</span><strong id="stat-p1-lost"
                                 style="color: #ffffff; font-family: monospace; font-size: 14px;">0</strong></div>
-                        <div style="display: flex; justify-content: space-between;"><span>平均機動力補正:</span><strong
+                        <div style="display: flex; justify-content: space-between;"><span>戦闘パフォーマンス:</span><strong
                                 id="stat-p1-acc"
-                                style="color: #ffffff; font-family: monospace; font-size: 14px;">1.00x</strong></div>
+                                style="color: #00ffcc; font-family: monospace; font-size: 14px;">EXCELLENT</strong></div>
                     </div>
 
                     <!-- 右カラム：相手（CPUボス または P2P対戦相手） -->
@@ -1976,9 +1974,9 @@
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>被撃墜回数
                                 (Lost):</span><strong id="stat-p2-lost"
                                 style="color: #ffffff; font-family: monospace; font-size: 14px;">0</strong></div>
-                        <div style="display: flex; justify-content: space-between;"><span>平均機動力補正:</span><strong
+                        <div style="display: flex; justify-content: space-between;"><span>戦闘パフォーマンス:</span><strong
                                 id="stat-p2-acc"
-                                style="color: #ffffff; font-family: monospace; font-size: 14px;">1.00x</strong></div>
+                                style="color: #ff1133; font-family: monospace; font-size: 14px;">GOOD</strong></div>
                     </div>
                 </div>
 
@@ -4040,14 +4038,27 @@
             currentBattleSession++;
             const thisSession = currentBattleSession;
 
-            // 💥【ここから挿入】：戦闘エンジンの冒頭内側へ直接定義を引っ越しします
+            // 💥【最適化】：技が出た瞬間だけDOMを更新し、毎フレームの無駄な再構築を根絶！
             function addComboLog(p, moveName) {
                 if (!p.system) p.system = {};
                 if (!p.system.comboLog) p.system.comboLog = [];
 
                 p.system.comboLog.push(moveName);
                 if (p.system.comboLog.length > 5) {
-                    p.system.comboLog.shift(); // 5件を超えたら古い履歴から順にお掃除
+                    p.system.comboLog.shift();
+                }
+
+                if (p.isPlayer && comboListEl) {
+                    let html = '';
+                    const len = p.system.comboLog.length;
+                    for (let idx = 0; idx < len; idx++) {
+                        const alpha = (idx + 1) / len;
+                        const isLatest = (idx === len - 1);
+                        const prefix = isLatest ? "▶ " : "  ";
+                        const color = isLatest ? '#ffcc00' : '#ffffff';
+                        html += `<div style="opacity: ${alpha}; color: ${color};">${prefix}${p.system.comboLog[idx]}</div>`;
+                    }
+                    comboListEl.innerHTML = html;
                 }
             }
             // ★追加：古い戦闘・会話スレッドおよびBGMを完全に停止させてリセット
@@ -4111,11 +4122,16 @@
             const groundY = stage.groundY;
 
             // ==========================================
-            // ★置き換え：動的リビルド可能な新しいグリッド生成処理
+            // ★置き換え：動的リビルド可能な新しいグリッド生成処理 ＆ 崖キャッシュ
             // ==========================================
             const GRID_CELL_SIZE = 150;
             function rebuildStageGrid() {
                 stage.grid = {}; // グリッドを一旦完全クリア
+                stage.cachedLedges = [
+                    { x: 0, y: groundY, dir: 1 },
+                    { x: stage.width, y: groundY, dir: -1 }
+                ];
+
                 stage.platforms.forEach(plat => {
                     const startCellX = Math.floor(plat.x / GRID_CELL_SIZE);
                     const endCellX = Math.floor((plat.x + plat.width) / GRID_CELL_SIZE);
@@ -4128,6 +4144,12 @@
                             if (!stage.grid[cellKey]) stage.grid[cellKey] = [];
                             stage.grid[cellKey].push(plat);
                         }
+                    }
+
+                    // 固い足場のみ崖リストへ事前キャッシュ
+                    if (plat.type === 'solid' && !plat.isPlayerCreated && !plat.isHydrant && !plat.isBlock) {
+                        stage.cachedLedges.push({ x: plat.x, y: plat.y, dir: 1 });
+                        stage.cachedLedges.push({ x: plat.x + plat.width, y: plat.y, dir: -1 });
                     }
                 });
             }
@@ -4365,8 +4387,7 @@
                     dizzyTimer: 0,
                     gravityInvertTimer: 0,
                     chargeTimer: 0,
-                    buriedTimer: 0,
-                    lightweightTimer: 0
+                    buriedTimer: 0
                 },
                 statBuff: { speed: 1.0, damage: 1.0 },
 
@@ -4414,16 +4435,13 @@
                     grabbedEnemy: null,
                     custom: {}
                 },
-                // --- 6. パッシブ＆アグレッション ---
+                // --- 6. パッシブアビリティ ---
                 passive: {
                     id: document.getElementById('sel-passive').value,
                     overdriveGauge: 0,
                     overdriveActive: false,
                     overdriveTimer: 0
                 },
-                aggressionStats: { disabled: false, graceFrames: 300, decayRate: 0.003, isSpeedType: false },
-                aggressionFactor: 1.0,
-                lastHitTimer: 0,
 
                 // 崖関連
                 ledgeGrabCooldown: 0,
@@ -4705,28 +4723,6 @@
                 overdriveActive: false,
                 overdriveTimer: 0
             };
-            const speedScore = charStats['speed-g'] + charStats['speed-a']; // 地上＋空中スピードの合計値（基準は10）
-            const powerScore = charStats['smash-dmg'] + charStats['weight'];
-
-            // アグレッション動作フラグのデフォルト化
-            player.aggressionStats.disabled = false;
-
-            if (speedScore <= 8) {
-                player.aggressionStats.disabled = true;
-                player.aggressionFactor = 1.0;
-            } else if (speedScore > powerScore + 2) {
-                player.aggressionStats.graceFrames = 150;
-                player.aggressionStats.decayRate = 0.006;
-                player.aggressionStats.isSpeedType = true;
-            } else if (powerScore > speedScore + 2) {
-                player.aggressionStats.graceFrames = 480;
-                player.aggressionStats.decayRate = 0.001;
-                player.aggressionStats.isSpeedType = false;
-            } else {
-                player.aggressionStats.graceFrames = 300;
-                player.aggressionStats.decayRate = 0.003;
-                player.aggressionStats.isSpeedType = false;
-            }
 
             player.ledgeGrabCooldown = 0;
             player.regrabTimer = 0;
@@ -5235,7 +5231,7 @@
                             vx: p.facing * 1.5, // 進行方向へわずかにスライド
                             vy: finalVy, // 💥 溜め連動上昇速度
                             radius: 20,
-                            maxRadius: finalRadius, // 💥 溜め連動爆縮最大半径
+                            maxRadius: finalMaxRadius, // 💥 変数名を正しく修正
                             life: 20, // 20フレーム浮遊後に起爆
                             maxLife: 20,
                             type: 'holy_ring',
@@ -5546,7 +5542,7 @@
                         p.color = '#ff1100';
                     },
                     onActive: (p, moveData, op) => {
-                        p.color = selectedColor; // 色を元に戻す
+                        p.color = p.isPlayer ? selectedColor : (p.color || '#ff4444'); // 本来の色に復元
                         p.vx = p.facing * 7.5;   // 打ち抜く瞬間の鋭い前進踏み込み
 
                         // 激震の画面揺れ
@@ -6121,7 +6117,8 @@
                                 offsetY: 0
                             };
 
-                            enemies.forEach(targetEnemy => {
+                            const targets = p.isPlayer ? enemies : [player];
+                            targets.forEach(targetEnemy => {
                                 if (targetEnemy.stocks > 0) {
                                     // プレイヤーの現在地ではなく、C4の設置地点からの距離を正しく測定
                                     const dist = Math.sqrt(Math.pow((targetEnemy.x + targetEnemy.width / 2) - p.c4X, 2) + Math.pow((targetEnemy.y + targetEnemy.height / 2) - p.c4Y, 2));
@@ -6409,7 +6406,7 @@
                         playSoundSE('jump');
                     }
                 },
-                // 6. 八艘飛び（前隙8Fの空中浮遊エイム ➔ 発生時に方向キースキャン ＆ 高度2倍化）
+                // 6. 八艘飛び（前隙8Fの空中浮遊エイム ➔ 発生時に方向キースキャン ＆ カウント継続）
                 'hasso_leap': {
                     onStart: (p, moveData, op) => {
                         p.vx = 0; p.vy = -0.25; // 8フレーム静かにその場でホバリングチャージ
@@ -6417,9 +6414,9 @@
                         playSoundSE('click');
                     },
                     onActive: (p, moveData, op) => {
-                        const c = p.attack.custom;
-                        if (c.hassoCount === undefined || c.hassoCount === 0) {
-                            c.hassoCount = 1;
+                        if (!p.system) p.system = {};
+                        if (p.system.hassoCount === undefined || p.system.hassoCount <= 0) {
+                            p.system.hassoCount = 1;
                         }
 
                         let dx = p.facing;
@@ -6432,26 +6429,23 @@
 
                         if (leftIn) dx = -1;
                         if (rightIn) dx = 1;
-                        if (keysPressed[keyConfig.jump]) dy = -1.4;
-                        if (keysPressed[keyConfig.guard]) dy = 0.8;
+                        if (upIn) dy = -1.4;
+                        if (downIn) dy = 0.8;
 
-                        // 💥【新規追加】：突進方向（dx）に合わせて、自機の向きを瞬時に同期
                         if (dx !== 0) {
                             p.facing = Math.sign(dx);
                         }
 
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        const speedScale = 1.0 + (c.hassoCount - 1) * 0.18;
-
-                        // 💥【修正】：初回の跳躍スピードを「6.8」から「12.5（約2倍）」へ大幅強化！
-                        // これにより、激突していない最初のジャンプであっても復帰・移動用として頼もしく使えます。
+                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                        const speedScale = 1.0 + (p.system.hassoCount - 1) * 0.18;
                         const baseLeapSpeed = 12.5;
 
                         p.vx = (dx / dist) * baseLeapSpeed * speedScale;
                         p.vy = (dy / dist) * baseLeapSpeed * speedScale;
                         p.isGrounded = false;
 
-                        c.hassoHitOccurred = false;
+                        if (!p.attack.custom) p.attack.custom = {};
+                        p.attack.custom.hassoHitOccurred = false;
 
                         createParticle(p.x + p.width / 2, p.y + p.height / 2, '#00ffcc', 0, 0, 25, 10, 'ring');
                         playSoundSE('jump');
@@ -6931,19 +6925,8 @@
 
                 if (!canGrabState || !isFallingOrSlow || obj.ledgeGrabCooldown > 0) return;
 
-                // ステージ内の角（掴める崖）を定義
-                let ledges = [
-                    { x: 0, y: groundY, dir: 1 },                 // メイン床の左端
-                    { x: stage.width, y: groundY, dir: -1 }       // メイン床の右端
-                ];
-
-                stage.platforms.forEach(plat => {
-                    // ★修正：消火栓（isHydrant）およびブロック（isBlock）の角にしがみつく不具合を、除外条件を明記して防止します
-                    if (plat.type === 'solid' && !plat.isPlayerCreated && !plat.isHydrant && !plat.isBlock) {
-                        ledges.push({ x: plat.x, y: plat.y, dir: 1 });
-                        ledges.push({ x: plat.x + plat.width, y: plat.y, dir: -1 });
-                    }
-                });
+                // 💡【最適化】：事前キャッシュされた崖リストをそのまま参照（ループ生成ゼロ化）
+                const ledges = stage.cachedLedges || [];
 
                 // キャラクターの肩付近のワールド座標
                 const px = obj.x + obj.width / 2;
@@ -7555,7 +7538,7 @@
 
                     // 回避行動が終わる最後の2コマで、無敵カラー（シアン）を本来の色に戻す
                     if (p.timer <= 2) {
-                        p.color = selectedColor;
+                        p.color = p.isPlayer ? selectedColor : (p.color || '#ff4444');
                     }
                 }
                 else if (action === 'meteor_dive') {
@@ -7670,7 +7653,7 @@
                     c.spinAttackTimer--;
 
                     // 💡【横移動力強化】：空中・地上を問わず、左右キー（A/D）で強烈に移動方向をコントロール可能にする！
-                    const driftSpeed = 5.5 * p.aggressionFactor; // ドリフトの最高速度
+                    const driftSpeed = 5.5; // 常に最高速度で旋回！
                     const isLeft = p.isPlayer ? keysPressed[keyConfig.left] : false;
                     const isRight = p.isPlayer ? keysPressed[keyConfig.right] : false;
 
@@ -8165,13 +8148,13 @@
                     if (isHolding) {
                         p.timer++; // 長押し中は硬直をロックしてチャージを継続
                         c.bowCharge = Math.min(maxCharge, c.bowCharge + 2.5);
-                        p.color = (Date.now() % 100 < 50) ? '#ff1100' : selectedColor;
+                        p.color = (Date.now() % 100 < 50) ? '#ff1100' : (p.isPlayer ? selectedColor : (p.color || '#ff4444'));
                         createParticle(p.x + p.width / 2 + p.facing * 25, p.y + 15, '#ff2200', (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, 3, 10);
                     } else {
                         // ボタンを離した、または最大チャージ完了によりisHoldingが解除された最初の1回だけ発動します
                         if (!c.bowReleased) {
                             c.bowReleased = true;
-                            p.color = selectedColor;
+                            p.color = p.isPlayer ? selectedColor : (p.color || '#ff4444');
 
                             const chargePct = c.bowCharge / maxCharge;
                             const baseDmg = p.activeAttackData.damage || 10.0;
@@ -9216,7 +9199,7 @@
                         createParticle(p.x + p.width / 2, p.y - 20, '#00ffff', 0, -6, 25, 10, 'ring');
                     }
                 }
-                else if (action === 'air-smash-d-giga-drill') {
+                else if (action === 'giga_drill_meteor') {
                     p.vy = 12; // 降下速度を維持
                     p.vx = 0;
                     if (matchFrames % 3 === 0) {
@@ -9800,8 +9783,8 @@
                             triggerScreenShake(12, 12); playSoundSE('hit');
                         }
 
-                        if (keysPressed['KeyW']) {
-                            keysPressed['KeyW'] = false;
+                        if (keysPressed[keyConfig.jump]) {
+                            keysPressed[keyConfig.jump] = false;
 
                             const lDmg = p.activeAttackData ? (p.activeAttackData.damage || 13.0) : 13.0;
                             const lKb = p.activeAttackData ? (p.activeAttackData.kbScale || 1.3) : 1.3;
@@ -9809,7 +9792,7 @@
 
                             p.vy = -9; p.vx = -p.facing * 2;
                             p.state = 'FREE';
-                            p.color = selectedColor;
+                            p.color = p.isPlayer ? selectedColor : (p.color || '#ff4444');
                             p.activeAttackData = null;
 
                             // 💡 脱出時のロケット射出も、全く同じ共通ヘルパーを呼び出すだけ！
@@ -9976,7 +9959,7 @@
                         p.color = '#ff2200';
                         p.timer = Math.max(p.timer, 10);
 
-                        const kartSpeed = 13.5 * p.aggressionFactor;
+                        const kartSpeed = 13.5; // 常に最高速度で爆走！
                         const isLeft = p.isPlayer ? keysPressed[keyConfig.left] : false;
                         const isRight = p.isPlayer ? keysPressed[keyConfig.right] : false;
 
@@ -10374,7 +10357,7 @@
 
                 else if (action === 'tomoshibi_action') {
                     p.vx = 0;
-                    if (c.tomoshibiCharge === undefined) c.typhoonCharge = 0; // 安全初期化
+                    if (c.tomoshibiCharge === undefined) c.tomoshibiCharge = 0; // 正しく修正
 
                     const isHolding = p.isPlayer ?
                         (keysPressed[keyConfig.special] || keysPressed[keyConfig.attack]) :
@@ -10476,7 +10459,7 @@
                     const progress = Math.min(1.0, c.dischargeTimer / maxHoldLimit);
                     const startRadius = 140; // 90 から 140（直径280px）へ拡大
                     const endRadius = 50;   // 30 から 50 へ引き上げ（最低サイズ維持）
-                    const currentRadius = startRadius - (progress * (startRadius - endRadius))
+                    const currentRadius = startRadius - (progress * (startRadius - endRadius));
 
                     // 💥【修正】リアルタイムの半径情報をアクターデータへ直接記憶（描画関数が同期参照します）
                     if (!p.system) p.system = {};
@@ -12243,31 +12226,7 @@
                         proj.type === 'flame_breath_particle' // 💡 修正：火炎ブレス専用に分離
                         // 💥 'fireball_shot' はここから削除して本物の当たり判定を持たせる！
                     );
-                    if (proj.type === 'mirror_plate') {
-                        ctx.save();
-                        // 💡 カメラ平行移動はすでに適用されているので、proj.x / proj.y のまま正確に重ねて描画できます！
-                        ctx.shadowBlur = 18; ctx.shadowColor = '#00ffff'; // ネオンシアン発光
-                        ctx.fillStyle = 'rgba(0, 255, 204, 0.16)'; // 内側は半透明
-                        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; // 白い輪郭線
 
-                        drawRoundedRect(ctx, proj.x, proj.y, proj.width, proj.height, 4);
-                        ctx.fill(); ctx.stroke();
-
-                        // 💡 【追加SF演出】：シールド表面を滑らかに流れるスキャンライン（走査エネルギー波）
-                        ctx.shadowBlur = 0; // コア発光オフ
-                        ctx.strokeStyle = 'rgba(0, 255, 204, 0.55)'; ctx.lineWidth = 1.5;
-
-                        // 弾の残り寿命（life）に同期して、上から下へとレーザーがループ移動
-                        const elapsed = proj.maxLife - proj.life;
-                        const scanY = proj.y + ((elapsed * 1.8) % proj.height);
-
-                        ctx.beginPath();
-                        ctx.moveTo(proj.x + 1, scanY);
-                        ctx.lineTo(proj.x + proj.width - 1, scanY);
-                        ctx.stroke();
-
-                        ctx.restore();
-                    }
                     // === 💡【追加】敵の放った弾がプレイヤー（p）にヒットする判定処理 ===
                     const isEnemyBullet = proj.owner === 'enemy' || proj.owner === 'neutral' || proj.owner === 'enemy_reflected';
                     // 💥【修正】：トロッコなど、専用の拘束・爆発処理を持つ弾（isEffectOnlyProj）は共通ダメージ判定から除外！
@@ -13174,39 +13133,7 @@
                                     declareWinner(winner);
                                 }
                             }
-                            const isSafeState = (player.respawnInvincibility > 0) ||
-                                (player.state === 'LEDGE_GRAB') ||
-                                (player.state === 'CANNON_HOLD');
-
-                            if (!player.aggressionStats.disabled) {
-                                if (isSafeState) {
-                                    player.lastHitTimer = 0;
-                                    player.aggressionFactor = 1.0;
-                                } else {
-                                    // 通常戦闘時のみタイマーを進める
-                                    player.lastHitTimer++;
-                                }
-
-                                if (player.lastHitTimer > player.aggressionStats.graceFrames) {
-                                    player.aggressionFactor = Math.max(0.85, player.aggressionFactor - player.aggressionStats.decayRate);
-                                    if (Math.random() < 0.25) {
-                                        createParticle(
-                                            player.x + Math.random() * player.width,
-                                            player.y + player.height - 5,
-                                            '#ff1100',
-                                            (Math.random() - 0.5) * 1,
-                                            -0.5 - Math.random() * 1.5,
-                                            3 + Math.random() * 3,
-                                            40,
-                                            'square'
-                                        );
-                                    }
-                                } else {
-                                    player.aggressionFactor = Math.min(1.0, player.aggressionFactor + 0.02);
-                                }
-                            } else {
-                                player.aggressionFactor = 1.0;
-                            }
+                            player.aggressionFactor = 1.0; // 常に100%固定
                         }
                         if (player.state === 'HELPLESS' && matchFrames % 15 === 0 && !matchEnded) {
                             const angleOffset = (Date.now() * 0.01);
@@ -13233,8 +13160,9 @@
                             }
                         });
                     } // 👈 💥【追加】 loopLimit 用の閉じ括弧をここに1つ挿入します
-                    const allGaugeActors = [player, ...enemies];
-                    allGaugeActors.forEach(actor => {
+                    
+                    const allActors = [player, ...enemies];
+                    allActors.forEach(actor => {
                         if (actor && actor.stocks > 0 && !matchEnded) {
                             addAbilityGauge(actor, 0.04); // 毎フレーム +0.04%
                         }
@@ -13246,9 +13174,8 @@
                         player.system.stealthTimer++;
                     }
 
-                    // 💡 自分（1P）と画面上の敵（CPU/2P）全員のパッシブタイマーをループ処理
-                    const allGaugeActorsLoop = [player, ...enemies];
-                    allGaugeActorsLoop.forEach(actor => {
+                    // 💡 自分（1P）と画面上の敵（CPU/2P）全員のパッシブタイマーをループ処理（allActorsを再利用）
+                    allActors.forEach(actor => {
                         if (!actor || actor.stocks <= 0 || !actor.passive) return;
                         if (!actor.system) actor.system = {};
 
@@ -13638,8 +13565,7 @@
                         player.timer--;
                         player.vx *= 0.8; // 前隙中は摩擦で徐々に減速
                         if (player.timer <= 0) {
-                            const jumpDebuff = Math.max(0.85, player.aggressionFactor);
-                            player.vy = player.stats.jumpPower * jumpDebuff;
+                            player.vy = player.stats.jumpPower; // 常に100%の跳躍力！
                             player.state = 'FREE';
                             player.isGrounded = false;
                         }
@@ -14043,11 +13969,13 @@
                         // ダッシュ中であればカスタマイズされた倍率を適用し、通常時は1.0倍にする
                         const dashMultiplier = isCurrentlyDashing ? player.stats.dashMult : 1.0;
 
+                        const breathSpeedMult = (player.statusEffects && player.statusEffects.chargeTimer > 0) ? 1.25 : 1.0;
+
                         let speed = (player.isGrounded ? player.stats.groundSpeed : player.stats.airSpeed)
                             * player.statBuff.speed
-                            * player.aggressionFactor
                             * jetSpeedMult
-                            * dashMultiplier;
+                            * dashMultiplier
+                            * breathSpeedMult;
 
                         if (isCurrentlyDashing) {
                             speed = Math.max(speed, 3.5 * dashMultiplier);
@@ -14107,14 +14035,17 @@
                         // A. 左右移動（最高速度へaccelPowerをかけて徐々に移行する慣性加速）
 
                         // 💥【不具合修正】特定の突進技・固定モーション技の最中であるかを判定するガード
-                        // 💡 スマッシュ技のIDを新しい略称（-s-）に同期させます
+                        // 💡 メガブレイカー（air-smash-s）と八艘飛び（sp_up_hasso）を追加して突進力を維持！
                         const isFixedDashAttacking = player.state === 'ATTACK' && (
                             player.attackType === 'sp_s_assault' ||
                             player.attackType === 'smash-s-surprise' ||
+                            player.attackType === 'air-smash-s' ||
                             player.attackType === 'air-smash-s-spin-assault' ||
                             player.attackType === 'smash-s-sword-draw' ||
                             player.attackType === 'smash-s-blast-fist' ||
                             player.attackType === 'sp_s_dash' ||
+                            player.attackType === 'sp_up_hasso' ||
+                            player.attackType === 'sp_n_giant_punch' ||
                             player.attackType === 'giant_punch'
                         );
 
@@ -14165,8 +14096,7 @@
                                     player.vx *= 0.2; // 地上で踏み切るための慣性減衰
                                     player.vy = 0;    // 前隙中はまだ上昇させない
                                 } else if (player.airJumpsLeft > 0) { // ★修正：残り1回でも飛べるように！
-                                    const jumpDebuff = Math.max(0.85, player.aggressionFactor);
-                                    player.vy = player.stats.jumpPower * jumpDebuff;
+                                    player.vy = player.stats.jumpPower; // 常に100%の跳躍力！
                                     player.airJumpsLeft--;
 
                                     // ★追加：空中ジャンプ時のカッコいい波紋エフェクト
@@ -14540,7 +14470,7 @@
                                 });
                             }
                             // 💥【新規追加】空中下スマ：空中投下バスターボムの射出物理
-                            else if (finalKey === 'air-smash-down-buster-bomb') {
+                            else if (finalKey === 'air-smash-d-buster-bomb') {
                                 const chargePct = player.system.smashChargeValue / maxLimit;
                                 const baseSize = 24;
 
@@ -14971,7 +14901,7 @@
                     if (isNaN(player.vx) || !isFinite(player.vx)) player.vx = 0;
                     if (isNaN(player.vy) || !isFinite(player.vy)) player.vy = 0;
                     if (isNaN(player.x) || !isFinite(player.x)) player.x = stage.width / 2 - player.width / 2;
-                    if (isNaN(player.y) || !isFinite(player.y)) player.y = defaultGroundY - player.height;
+                    if (isNaN(player.y) || !isFinite(player.y)) player.y = groundY - player.height;
                     if (isNaN(player.damagePercent) || !isFinite(player.damagePercent)) player.damagePercent = 0; // 💥 追加：NaN表示バグの復元ガード
 
                     // バウンド、または被弾フリーズ（ヒットストップ）による一時停止状態をチェック
@@ -17169,7 +17099,7 @@
                     if (isNaN(targetEnemy.vx) || !isFinite(targetEnemy.vx)) targetEnemy.vx = 0;
                     if (isNaN(targetEnemy.vy) || !isFinite(targetEnemy.vy)) targetEnemy.vy = 0;
                     if (isNaN(targetEnemy.x) || !isFinite(targetEnemy.x)) targetEnemy.x = stage.width / 2 - targetEnemy.width / 2;
-                    if (isNaN(targetEnemy.y) || !isFinite(targetEnemy.y)) targetEnemy.y = defaultGroundY - targetEnemy.height;
+                    if (isNaN(targetEnemy.y) || !isFinite(targetEnemy.y)) targetEnemy.y = groundY - targetEnemy.height;
                     if (isNaN(targetEnemy.damagePercent) || !isFinite(targetEnemy.damagePercent)) targetEnemy.damagePercent = 0; // 💥 追加：NaN表示バグの復元ガード
 
                     // 💥【激突・被弾フリーズ同期】：バウンド、または被弾フリーズ中は座標の加算を完全スキップする
@@ -17916,6 +17846,8 @@
                 for (let gIdx = stage.gimmicks.length - 1; gIdx >= 0; gIdx--) {
                     const g = stage.gimmicks[gIdx];
                     if (!g) continue;
+
+                    const allActors = [player, ...enemies];
 
                     if (g.type === 'trampoline') {
                         // ★修正：経過時間をカウントアップする処理を最初に追加します
@@ -21200,20 +21132,20 @@
                         ctx.restore();
                     }
                 }
-                if (player.state === 'ATTACK' && player.attackType === 'sp_up_hasso' && player.attack.custom && player.attack.custom.hassoCount > 1) {
+                if (player.system && player.system.hassoCount > 1) {
                     ctx.save();
                     ctx.setTransform(1, 0, 0, 1, 0, 0); // スクリーン座標にリセットして文字を真っ直ぐに
 
                     ctx.textAlign = 'center';
-                    ctx.fillStyle = '#00ffff';
-                    ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
+                    ctx.fillStyle = player.system.hassoCount >= 8 ? '#ff0055' : '#00ffff';
+                    ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
                     ctx.font = '900 48px "Impact", sans-serif';
 
                     const screenX = player.x + player.width / 2 - camera.x;
                     const screenY = player.y - 35 - camera.y;
 
-                    const count = player.attack.custom.hassoCount;
-                    ctx.fillText(count, screenX, screenY);
+                    const count = player.system.hassoCount;
+                    ctx.fillText(`${count} / 8`, screenX, screenY);
                     ctx.restore();
                 }
 
@@ -22017,228 +21949,199 @@
                 const minutes = Math.floor(secTotal / 60);
                 const seconds = secTotal % 60;
 
-                // A. 制限時間の更新
-                const hudTimerEl = document.getElementById('hud-timer');
-                if (hudTimerEl) {
+// ==========================================
+                // 💡【差分検知（Dirty Check）】：数値が変わったフレームのみDOM更新（高速化）
+                // ==========================================
+                if (!window.hudCache) {
+                    window.hudCache = {
+                        timerEl: document.getElementById('hud-timer'),
+                        p1PercentEl: document.getElementById('hud-p1-percent'),
+                        p2PercentEl: document.getElementById('hud-p2-percent'),
+                        p1StocksEl: document.getElementById('hud-p1-stocks'),
+                        p2StocksEl: document.getElementById('hud-p2-stocks'),
+                        p2NameEl: document.getElementById('hud-p2-name'),
+                        p1GaugeContainer: document.getElementById('hud-p1-gauge-container'),
+                        p1GaugeLabel: document.getElementById('hud-p1-gauge-label'),
+                        p1GaugeValue: document.getElementById('hud-p1-gauge-value'),
+                        p1GaugeFill: document.getElementById('hud-p1-gauge-fill'),
+                        p2GaugeContainer: document.getElementById('hud-p2-gauge-container'),
+                        p2GaugeLabel: document.getElementById('hud-p2-gauge-label'),
+                        p2GaugeValue: document.getElementById('hud-p2-gauge-value'),
+                        p2GaugeFill: document.getElementById('hud-p2-gauge-fill'),
+                        lastTimerText: '',
+                        lastP1Dmg: -1,
+                        lastP2Dmg: -1,
+                        lastP1Stocks: -1,
+                        lastP2Stocks: -1,
+                        lastP1Gauge: -1,
+                        lastP2Gauge: -1
+                    };
+                }
+                const hc = window.hudCache;
+
+                // A. タイマーの差分更新
+                if (hc.timerEl) {
+                    let nextTimerText = "";
                     if (isTestMode) {
-                        hudTimerEl.textContent = "TRAINING";
-                        hudTimerEl.style.color = "#33ffff";
-                    }
-                    // ★追加：ホームランコンテスト時はリアルタイムに状況を表示
-                    else if (isHRMode) {
+                        nextTimerText = "TRAINING";
+                    } else if (isHRMode) {
                         const displayEnemy = enemies.find(e => e.id === 'boss');
-                        if (hrState === 'PREPARE') {
-                            // 準備フェーズ中はカウントダウン
-                            hudTimerEl.textContent = `TIME: ${(hrTimer / 60).toFixed(2)} s`;
-                            hudTimerEl.style.color = "#ffcc00";
-                        } else if (hrState === 'FLIGHT') {
-                            // 吹っ飛び計測中は、現在の飛距離をリアルタイム表示！
+                        if (hrState === 'PREPARE') nextTimerText = `TIME: ${(hrTimer / 60).toFixed(2)} s`;
+                        else if (hrState === 'FLIGHT') {
                             const currentDist = displayEnemy ? Math.max(0, ((displayEnemy.x - 950) / 14)).toFixed(2) : "0.00";
-                            hudTimerEl.textContent = `DISTANCE: ${currentDist} m`;
-                            hudTimerEl.style.color = "#00ffcc";
-                        } else {
-                            // リザルト確定時は画面中央に記録を固定表示！
-                            hudTimerEl.textContent = `RECORD: ${hrDistance} m!!!`;
-                            hudTimerEl.style.color = "#ffd700";
-                        }
-                    }
-    // 100人組手のときは経過時間のカウントアップ表示にする
-                    else if (modeName.includes("100人組手")) {
+                            nextTimerText = `DISTANCE: ${currentDist} m`;
+                        } else nextTimerText = `RECORD: ${hrDistance} m!!!`;
+                    } else if (modeName.includes("100人組手")) {
                         const elapsedFrames = battleStats.startTime - matchFrames;
                         const elapsedSeconds = Math.floor(elapsedFrames / 60);
                         const elapsedMinutes = Math.floor(elapsedSeconds / 60);
                         const elapsedSecRemainder = elapsedSeconds % 60;
                         const elapsedMs = Math.floor(((elapsedFrames % 60) / 60) * 100);
+                        nextTimerText = `${elapsedMinutes}:${elapsedSecRemainder < 10 ? '0' + elapsedSecRemainder : elapsedSecRemainder}.${elapsedMs < 10 ? '0' + elapsedMs : elapsedMs}`;
+                    } else {
+                        nextTimerText = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+                    }
 
-                        hudTimerEl.textContent = `${elapsedMinutes}:${elapsedSecRemainder < 10 ? '0' + elapsedSecRemainder : elapsedSecRemainder}.${elapsedMs < 10 ? '0' + elapsedMs : elapsedMs}`;
-                        hudTimerEl.style.color = "#00ffcc"; // カウントアップ時は見やすさ向上のためシアン色に設定
-                    }
-                    else {
-                        hudTimerEl.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
-                        hudTimerEl.style.color = "#ffffff";
-                    }
-                }
-                const comboListEl = document.getElementById('hud-combo-list');
-                if (comboListEl && player.system && player.system.comboLog) {
-                    if (player.system.comboLog.length > 0 && !matchEnded) {
-                        comboListEl.innerHTML = ''; // 一度クリア
-                        player.system.comboLog.forEach((logName, idx) => {
-                            // 最近の技ほど明るくなり、古い技ほど暗くフェードアウトする透明度を設定
-                            const alpha = (idx + 1) / player.system.comboLog.length;
-                            const prefix = (idx === player.system.comboLog.length - 1) ? "▶ " : "  ";
-                            comboListEl.innerHTML += `<div style="opacity: ${alpha}; color: ${idx === player.system.comboLog.length - 1 ? '#ffcc00' : '#ffffff'};">${prefix}${logName}</div>`;
-                        });
-                    } else if (matchEnded) {
-                        comboListEl.innerHTML = '<span style="color: #555;">(セッション終了)</span>';
+                    if (hc.lastTimerText !== nextTimerText) {
+                        hc.timerEl.textContent = nextTimerText;
+                        hc.lastTimerText = nextTimerText;
                     }
                 }
 
-                // B. 組み手撃墜数カウンター
-                // 💡 修正：キャンバス側に描画するため、HTML側のカウンターは常に非表示（none）にして重なりを防ぎます
-                const hudMushCountEl = document.getElementById('hud-mush-count');
-                if (hudMushCountEl) {
-                    hudMushCountEl.style.display = "none";
+                // B. P1 ダメージ% の差分更新
+                const currentP1Dmg = Math.floor(player.damagePercent);
+                if (hc.p1PercentEl && hc.lastP1Dmg !== currentP1Dmg) {
+                    hc.p1PercentEl.textContent = `${currentP1Dmg}%`;
+                    hc.lastP1Dmg = currentP1Dmg;
                 }
 
-                // C. プレイヤー1 (YOU) のパーセント & ストックHTML表示
-                const hudP1PercentEl = document.getElementById('hud-p1-percent');
-                if (hudP1PercentEl) {
-                    hudP1PercentEl.textContent = `${Math.floor(player.damagePercent)}%`;
-                }
-
-                const p1GaugeContainer = document.getElementById('hud-p1-gauge-container');
-                const p1GaugeLabel = document.getElementById('hud-p1-gauge-label');
-                const p1GaugeValue = document.getElementById('hud-p1-gauge-value');
-                const p1GaugeFill = document.getElementById('hud-p1-gauge-fill');
-
-                if (p1GaugeContainer && player && player.passive) {
+                // C. P1 ゲージバーの差分更新
+                if (hc.p1GaugeContainer && player && player.passive) {
                     const passiveId = player.passive.id;
                     let currentGaugeVal = 0;
                     let labelText = "";
                     let gaugeColor = "#00ffff";
                     let isGaugePassive = true;
 
-                    // 💥【修正】：技ごとに名前と色を専用のものに分岐！
                     if (passiveId === 'p_desperado') {
-                        currentGaugeVal = (player.system && player.system.koGauge !== undefined) ? player.system.koGauge : 0;
-                        labelText = "K.O. GAUGE";
-                        gaugeColor = "#ff2200"; // 赤
+                        currentGaugeVal = player.system?.koGauge || 0;
+                        labelText = "K.O. GAUGE"; gaugeColor = "#ff2200";
                     } else if (passiveId === 'p_desperado_slash') {
-                        currentGaugeVal = (player.system && player.system.koGauge !== undefined) ? player.system.koGauge : 0;
-                        labelText = "ISSEN GAUGE";
-                        gaugeColor = "#00ffff"; // シアン
+                        currentGaugeVal = player.system?.koGauge || 0;
+                        labelText = "ISSEN GAUGE"; gaugeColor = "#00ffff";
                     } else if (passiveId === 'p_desperado_beam') {
-                        currentGaugeVal = (player.system && player.system.koGauge !== undefined) ? player.system.koGauge : 0;
-                        labelText = "BUSTER GAUGE";
-                        gaugeColor = "#00e5ff"; // ブルー
+                        currentGaugeVal = player.system?.koGauge || 0;
+                        labelText = "BUSTER GAUGE"; gaugeColor = "#00e5ff";
                     } else if (passiveId === 'p_limit') {
-                        currentGaugeVal = (player.system && player.system.limitGauge !== undefined) ? player.system.limitGauge : 0;
-                        labelText = "LIMIT GAUGE";
-                        gaugeColor = "#00ffff";
+                        currentGaugeVal = player.system?.limitGauge || 0;
+                        labelText = "LIMIT GAUGE"; gaugeColor = "#00ffff";
                     } else if (passiveId === 'p_rebellion') {
-                        currentGaugeVal = (player.system && player.system.rebellionGauge !== undefined) ? player.system.rebellionGauge : 0;
-                        labelText = "REBELLION GAUGE";
-                        gaugeColor = "#ff0055";
+                        currentGaugeVal = player.system?.rebellionGauge || 0;
+                        labelText = "REBELLION GAUGE"; gaugeColor = "#ff0055";
                     } else if (passiveId === 'p_overdrive') {
-                        currentGaugeVal = (player.system && player.system.overdriveGauge !== undefined) ? player.system.overdriveGauge : 0;
-                        labelText = "OVERDRIVE GAUGE";
-                        gaugeColor = "#ffaa00";
-                    } else {
-                        isGaugePassive = false; // ゲージ無しの時は非表示
-                    }
-
-                    if (isGaugePassive) {
-                        p1GaugeContainer.style.display = 'block';
-                        const ratio = Math.max(0, Math.min(100, currentGaugeVal));
-
-                        if (p1GaugeLabel) {
-                            p1GaugeLabel.textContent = labelText;
-                            p1GaugeLabel.style.color = gaugeColor;
-                        }
-                        if (p1GaugeValue) p1GaugeValue.textContent = `${Math.floor(ratio)}%`;
-                        if (p1GaugeFill) {
-                            p1GaugeFill.style.width = `${ratio}%`;
-                            p1GaugeFill.style.backgroundColor = gaugeColor;
-                            p1GaugeFill.style.boxShadow = `0 0 8px ${gaugeColor}`;
-                        }
-                    } else {
-                        p1GaugeContainer.style.display = 'none';
-                    }
-                }
-
-                const displayEnemy = enemies.find(e => e.stocks > 0) || enemies[0];
-
-                // 💥【新規追加】：敵（P2 / オンライン対戦相手 / CPU）のアビリティゲージHUD同期
-                const p2GaugeContainer = document.getElementById('hud-p2-gauge-container');
-                const p2GaugeLabel = document.getElementById('hud-p2-gauge-label');
-                const p2GaugeValue = document.getElementById('hud-p2-gauge-value');
-                const p2GaugeFill = document.getElementById('hud-p2-gauge-fill');
-
-                if (p2GaugeContainer && displayEnemy) {
-                    const pId = displayEnemy.passive ? displayEnemy.passive.id : (displayEnemy.passiveId || 'p_none');
-                    let currentGaugeVal = 0;
-                    let labelText = "";
-                    let gaugeColor = "#00ffff";
-                    let isGaugePassive = true;
-
-                    // 💥【修正】：敵側も技ごとに名前と色を専用のものに分岐！
-                    if (pId === 'p_desperado') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.koGauge !== undefined) ? displayEnemy.system.koGauge : 0;
-                        labelText = "K.O. GAUGE";
-                        gaugeColor = "#ff2200";
-                    } else if (pId === 'p_desperado_slash') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.koGauge !== undefined) ? displayEnemy.system.koGauge : 0;
-                        labelText = "ISSEN GAUGE";
-                        gaugeColor = "#00ffff";
-                    } else if (pId === 'p_desperado_beam') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.koGauge !== undefined) ? displayEnemy.system.koGauge : 0;
-                        labelText = "BUSTER GAUGE";
-                        gaugeColor = "#00e5ff";
-                    } else if (pId === 'p_limit') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.limitGauge !== undefined) ? displayEnemy.system.limitGauge : 0;
-                        labelText = "LIMIT GAUGE";
-                        gaugeColor = "#00ffff";
-                    } else if (pId === 'p_rebellion') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.rebellionGauge !== undefined) ? displayEnemy.system.rebellionGauge : 0;
-                        labelText = "REBELLION GAUGE";
-                        gaugeColor = "#ff0055";
-                    } else if (pId === 'p_overdrive') {
-                        currentGaugeVal = (displayEnemy.system && displayEnemy.system.overdriveGauge !== undefined) ? displayEnemy.system.overdriveGauge : 0;
-                        labelText = "OVERDRIVE GAUGE";
-                        gaugeColor = "#ffaa00";
+                        currentGaugeVal = player.system?.overdriveGauge || 0;
+                        labelText = "OVERDRIVE GAUGE"; gaugeColor = "#ffaa00";
                     } else {
                         isGaugePassive = false;
                     }
 
                     if (isGaugePassive) {
-                        p2GaugeContainer.style.display = 'block';
-                        const ratio = Math.max(0, Math.min(100, currentGaugeVal));
-
-                        if (p2GaugeLabel) {
-                            p2GaugeLabel.textContent = labelText;
-                            p2GaugeLabel.style.color = gaugeColor;
-                        }
-                        if (p2GaugeValue) p2GaugeValue.textContent = `${Math.floor(ratio)}%`;
-                        if (p2GaugeFill) {
-                            p2GaugeFill.style.width = `${ratio}%`;
-                            p2GaugeFill.style.backgroundColor = gaugeColor;
-                            p2GaugeFill.style.boxShadow = `0 0 8px ${gaugeColor}`;
+                        hc.p1GaugeContainer.style.display = 'block';
+                        const roundedGauge = Math.floor(Math.max(0, Math.min(100, currentGaugeVal)));
+                        if (hc.lastP1Gauge !== roundedGauge) {
+                            hc.p1GaugeLabel.textContent = labelText;
+                            hc.p1GaugeLabel.style.color = gaugeColor;
+                            hc.p1GaugeValue.textContent = `${roundedGauge}%`;
+                            hc.p1GaugeFill.style.width = `${roundedGauge}%`;
+                            hc.p1GaugeFill.style.backgroundColor = gaugeColor;
+                            hc.p1GaugeFill.style.boxShadow = `0 0 8px ${gaugeColor}`;
+                            hc.lastP1Gauge = roundedGauge;
                         }
                     } else {
-                        p2GaugeContainer.style.display = 'none';
+                        hc.p1GaugeContainer.style.display = 'none';
                     }
                 }
 
-                
-
-                const hudP1StocksEl = document.getElementById('hud-p1-stocks');
-                if (hudP1StocksEl) {
-                    hudP1StocksEl.innerHTML = ''; // 一度クリア
-
-                    // 💡 テストモードでない場合のみ、残機（ストックドット）を生成表示します
-                    if (!isTestMode) {
-                        for (let s = 0; s < player.stocks; s++) {
-                            hudP1StocksEl.innerHTML += `<div style="width: 8px; height: 8px; background: ${player.color}; border-radius: 50%;"></div>`;
-                        }
+                // D. P1 ストックドットの差分更新
+                if (hc.p1StocksEl && !isTestMode && hc.lastP1Stocks !== player.stocks) {
+                    let dotsHtml = '';
+                    for (let s = 0; s < player.stocks; s++) {
+                        dotsHtml += `<div style="width: 8px; height: 8px; background: ${player.color}; border-radius: 50%;"></div>`;
                     }
+                    hc.p1StocksEl.innerHTML = dotsHtml;
+                    hc.lastP1Stocks = player.stocks;
                 }
 
-                // D. エネミー のパーセント & ストックHTML表示
-                const hudP2NameEl = document.getElementById('hud-p2-name');
-                const hudP2PercentEl = document.getElementById('hud-p2-percent');
-                const hudP2StocksEl = document.getElementById('hud-p2-stocks');
+                // E. P2 情報 ＆ ダメージ% ＆ ストックの差分更新
+                const displayEnemy = enemies.find(e => e.stocks > 0) || enemies[0];
 
                 if (displayEnemy) {
-                    if (hudP2NameEl) {
-                        hudP2NameEl.textContent = displayEnemy.isBoss ? "ENEMY BOSS" : "ENEMY GRUNT";
-                        hudP2NameEl.style.color = displayEnemy.color;
+                    const currentP2Dmg = Math.floor(displayEnemy.damagePercent);
+                    if (hc.p2PercentEl && hc.lastP2Dmg !== currentP2Dmg) {
+                        hc.p2PercentEl.textContent = `${currentP2Dmg}%`;
+                        hc.lastP2Dmg = currentP2Dmg;
                     }
-                    if (hudP2PercentEl) {
-                        hudP2PercentEl.textContent = `${Math.floor(displayEnemy.damagePercent)}%`;
+
+                    if (hc.p2NameEl) {
+                        hc.p2NameEl.textContent = displayEnemy.isBoss ? "ENEMY BOSS" : "ENEMY GRUNT";
+                        hc.p2NameEl.style.color = displayEnemy.color;
                     }
-                } else {
-                    if (hudP2NameEl) hudP2NameEl.textContent = "";
-                    if (hudP2PercentEl) hudP2PercentEl.textContent = "";
+
+                    if (hc.p2StocksEl && !isTestMode && hc.lastP2Stocks !== displayEnemy.stocks) {
+                        let dotsHtml = '';
+                        for (let s = 0; s < displayEnemy.stocks; s++) {
+                            dotsHtml += `<div style="width: 8px; height: 8px; background: ${displayEnemy.color}; border-radius: 50%;"></div>`;
+                        }
+                        hc.p2StocksEl.innerHTML = dotsHtml;
+                        hc.lastP2Stocks = displayEnemy.stocks;
+                    }
+
+                    // P2 ゲージバー
+                    if (hc.p2GaugeContainer) {
+                        const pId = displayEnemy.passive?.id || displayEnemy.passiveId || 'p_none';
+                        let currentGaugeVal = 0;
+                        let labelText = "";
+                        let gaugeColor = "#00ffff";
+                        let isGaugePassive = true;
+
+                        if (pId === 'p_desperado') {
+                            currentGaugeVal = displayEnemy.system?.koGauge || 0;
+                            labelText = "K.O. GAUGE"; gaugeColor = "#ff2200";
+                        } else if (pId === 'p_desperado_slash') {
+                            currentGaugeVal = displayEnemy.system?.koGauge || 0;
+                            labelText = "ISSEN GAUGE"; gaugeColor = "#00ffff";
+                        } else if (pId === 'p_desperado_beam') {
+                            currentGaugeVal = displayEnemy.system?.koGauge || 0;
+                            labelText = "BUSTER GAUGE"; gaugeColor = "#00e5ff";
+                        } else if (pId === 'p_limit') {
+                            currentGaugeVal = displayEnemy.system?.limitGauge || 0;
+                            labelText = "LIMIT GAUGE"; gaugeColor = "#00ffff";
+                        } else if (pId === 'p_rebellion') {
+                            currentGaugeVal = displayEnemy.system?.rebellionGauge || 0;
+                            labelText = "REBELLION GAUGE"; gaugeColor = "#ff0055";
+                        } else if (pId === 'p_overdrive') {
+                            currentGaugeVal = displayEnemy.system?.overdriveGauge || 0;
+                            labelText = "OVERDRIVE GAUGE"; gaugeColor = "#ffaa00";
+                        } else {
+                            isGaugePassive = false;
+                        }
+
+                        if (isGaugePassive) {
+                            hc.p2GaugeContainer.style.display = 'block';
+                            const roundedGauge = Math.floor(Math.max(0, Math.min(100, currentGaugeVal)));
+                            if (hc.lastP2Gauge !== roundedGauge) {
+                                hc.p2GaugeLabel.textContent = labelText;
+                                hc.p2GaugeLabel.style.color = gaugeColor;
+                                hc.p2GaugeValue.textContent = `${roundedGauge}%`;
+                                hc.p2GaugeFill.style.width = `${roundedGauge}%`;
+                                hc.p2GaugeFill.style.backgroundColor = gaugeColor;
+                                hc.p2GaugeFill.style.boxShadow = `0 0 8px ${gaugeColor}`;
+                                hc.lastP2Gauge = roundedGauge;
+                            }
+                        } else {
+                            hc.p2GaugeContainer.style.display = 'none';
+                        }
+                    }
                 }
 
                 // ==========================================
@@ -22257,17 +22160,6 @@
                     const roundedP2 = Math.floor(displayEnemy.damagePercent);
                     if (parseFloat(p2Input.value) !== roundedP2) {
                         p2Input.value = roundedP2;
-                    }
-                }
-
-                if (hudP2StocksEl) {
-                    hudP2StocksEl.innerHTML = ''; // 一度クリア
-
-                    // 💥 修正：displayEnemyが存在し、かつテストモードでない場合のみ生成
-                    if (displayEnemy && !isTestMode) {
-                        for (let s = 0; s < displayEnemy.stocks; s++) {
-                            hudP2StocksEl.innerHTML += `<div style="width: 8px; height: 8px; background: ${displayEnemy.color}; border-radius: 50%;"></div>`;
-                        }
                     }
                 }
 
@@ -22567,8 +22459,8 @@ function triggerPersonaAwakeningCutin(actor, pId) {
 function addAbilityGauge(actor, amount) {
                 if (!actor || !actor.passive) return;
                 if (!actor.system) actor.system = {};
-                const pId = actor.passive.id || actor.passiveId;
-                if (amount <= 0 || isNaN(amount)) return;
+                const pId = actor.passive.id || actor.passiveId || '';
+                if (!pId || amount <= 0 || isNaN(amount)) return;
 
                 if (pId.startsWith('p_desperado')) {
                     const currentKO = isNaN(actor.system.koGauge) ? 0 : (actor.system.koGauge || 0);
@@ -23189,40 +23081,35 @@ function addAbilityGauge(actor, amount) {
                 target.lastAttacker = attacker;
 
                 if (attacker.state === 'ATTACK' && attacker.attackType === 'sp_up_hasso') {
-                    const c = attacker.attack.custom;
-                    if (c && !c.hassoHitOccurred) {
-                        c.hassoHitOccurred = true;
+                    if (!attacker.system) attacker.system = {};
+                    const currentCount = attacker.system.hassoCount || 1;
 
-                        // 敵を足蹴にして反発
-                        attacker.vx = -attacker.vx * 0.45;
-                        attacker.vy = -3.8;
+                    // 敵を足蹴にして反発
+                    attacker.vx = -attacker.vx * 0.45;
+                    attacker.vy = -5.5;
 
-                        const currentCount = c.hassoCount || 1;
-
-                        // 💡【仕様書の再現】：連続回数に応じて、次回使う時のための威力をアップ！
-                        if (currentCount === 8) {
-                            if (attacker.activeAttackData) {
-                                attacker.activeAttackData.damage = 45.0;
-                                attacker.activeAttackData.kbScale = 3.5;
-                            }
-                        } else {
-                            if (attacker.activeAttackData) {
-                                attacker.activeAttackData.damage = 3.5 * (1.0 + (currentCount - 1) * 0.25);
-                                attacker.activeAttackData.kbScale = 0.8 * (1.0 + (currentCount - 1) * 0.15);
-                            }
+                    // 💡【仕様書の再現】：連続回数に応じて、次回使う時のための威力をアップ！
+                    if (currentCount >= 8) {
+                        if (attacker.activeAttackData) {
+                            attacker.activeAttackData.damage = 45.0;
+                            attacker.activeAttackData.kbScale = 3.5;
                         }
-
-                        c.hassoCount = Math.min(8, currentCount + 1);
-
-                        createParticle(attacker.x + attacker.width / 2, attacker.y + attacker.height / 2, '#00ffcc', 0, 0, 50, 15, 'ring');
-                        playSoundSE('click');
-
-                        // 安全に状態をリセット（ここで初期化しないとエラーになるのを防止）
-                        attacker.state = 'FREE';
-                        attacker.attack.isActive = false;
-                        attacker.activeAttackData = null;
-                        resetAirJumps(attacker);
+                    } else {
+                        if (attacker.activeAttackData) {
+                            attacker.activeAttackData.damage = 3.5 * (1.0 + (currentCount - 1) * 0.35);
+                            attacker.activeAttackData.kbScale = 0.8 * (1.0 + (currentCount - 1) * 0.20);
+                        }
                     }
+
+                    attacker.system.hassoCount = Math.min(8, currentCount + 1);
+
+                    createParticle(attacker.x + attacker.width / 2, attacker.y + attacker.height / 2, '#00ffcc', 0, 0, 45, 15, 'ring');
+                    playSoundSE('click');
+
+                    attacker.state = 'FREE';
+                    attacker.attack.isActive = false;
+                    attacker.activeAttackData = null;
+                    resetAirJumps(attacker);
                 }
                 if (attacker.isPlayer) {
                     battleStats.p1Dealt += damage;
@@ -23851,14 +23738,7 @@ function addAbilityGauge(actor, amount) {
                 if (p.statusEffects.shrinkTimer > 0) kbMult *= 1.2;
                 if (p.statusEffects.burnTimer > 0) enemyDamage *= 1.3;
 
-                if (p.state === 'ATTACK' && p.attackType === 'sp_up_hasso') {
-                    if (!p.attack.custom) p.attack.custom = {};
-                    const c = p.attack.custom;
-                    const prevCount = c.hassoCount || 1;
-                    c.hassoCount = Math.min(8, prevCount + 1);
-                    p.hasRecoveryLeft = true;
-                    createParticle(p.x + p.width / 2, p.y + p.height / 2, '#ff1100', 0, 0, 35, 12, 'ring');
-                }
+                // (※ checkEnemyAttackHit 内の「if (p.state === 'ATTACK' && p.attackType === 'sp_up_hasso')」ブロックは丸ごと削除)
 
                 // 💡 NaNガード付き安全加算
                 const safeEnemyDmg = (isNaN(enemyDamage) || !isFinite(enemyDamage)) ? 0 : enemyDamage;
@@ -25026,6 +24906,24 @@ function addAbilityGauge(actor, amount) {
                                 obj.x = plat.x + plat.width + 0.1;
                             }
 
+                            // 💥【八艘飛び専用】：壁激突時の連続跳躍バウンド＆カウント加算！
+                            if (obj.state === 'ATTACK' && obj.attackType === 'sp_up_hasso') {
+                                if (!obj.system) obj.system = {};
+                                const currentCount = obj.system.hassoCount || 1;
+                                obj.system.hassoCount = Math.min(8, currentCount + 1);
+
+                                obj.vx = -obj.vx * 0.55;
+                                obj.vy = -6.5;
+                                obj.state = 'FREE';
+                                obj.attack.isActive = false;
+                                obj.activeAttackData = null;
+                                resetAirJumps(obj);
+
+                                createParticle(obj.x + obj.width / 2, obj.y + obj.height / 2, '#00ffcc', 0, 0, 35, 12, 'ring');
+                                playSoundSE('click');
+                                return;
+                            }
+
                             if (isHighSpeedImpact) {
                                 if (!obj.system) obj.system = {};
                                 obj.system.bounceDelayTimer = 8;
@@ -25041,6 +24939,25 @@ function addAbilityGauge(actor, amount) {
                             if (obj.y + obj.height / 2 < plat.y + plat.height / 2) {
                                 // 床（上面）接地
                                 obj.y = plat.y - obj.height;
+
+                                // 💥【八艘飛び専用】：床激突時の連続跳躍バウンド＆カウント加算！
+                                if (obj.state === 'ATTACK' && obj.attackType === 'sp_up_hasso') {
+                                    if (!obj.system) obj.system = {};
+                                    const currentCount = obj.system.hassoCount || 1;
+                                    obj.system.hassoCount = Math.min(8, currentCount + 1);
+
+                                    obj.vy = -7.5;
+                                    obj.isGrounded = false;
+                                    obj.state = 'FREE';
+                                    obj.attack.isActive = false;
+                                    obj.activeAttackData = null;
+                                    resetAirJumps(obj);
+
+                                    createParticle(obj.x + obj.width / 2, plat.y, '#00ffcc', 0, 0, 40, 12, 'ring');
+                                    playSoundSE('click');
+                                    return;
+                                }
+
                                 const isMeteorBounce = isKnockback && obj.vy > 8.0;
 
                                 if (isMeteorBounce) {
@@ -25056,6 +24973,7 @@ function addAbilityGauge(actor, amount) {
                                     obj.vy = 0;
                                     obj.isGrounded = true;
                                     resetAirJumps(obj);
+                                    if (obj.system) obj.system.hassoCount = 1; // 通常着地で八艘カウントをリセット
                                 }
                             } else {
                                 // 天井衝突
@@ -25231,9 +25149,6 @@ function addAbilityGauge(actor, amount) {
         function resetAirJumps(obj) {
             if (obj.airJumpsLeft !== undefined) {
                 obj.airJumpsLeft = obj.airJumpsMax;
-            }
-            if (obj.attack && obj.attack.custom) {
-                obj.attack.custom.hassoCount = 1;
             }
             obj.hasRecoveryLeft = true;
             obj.hasWireLeft = true; // ワイヤー/チェイン共通回復
@@ -25855,9 +25770,55 @@ function drawCharacterShield(ctx, char, camera) {
         let currentSelectedMode = ""; // 選択された戦闘モード（テスト、PVP、PVPE等）を保持するグローバル変数
 
         function openStageSelect(modeName) {
+            // 1. コスト上限チェック
+            let totalCost = 0;
+            if (window.charStats) {
+                totalCost += (window.charStats['normal-dmg'] * 3);
+                totalCost += (window.charStats['normal-kb'] * 3);
+                totalCost += (window.charStats['smash-dmg'] * 4);
+                totalCost += (window.charStats['smash-kb'] * 4);
+                totalCost += (window.charStats['speed-g'] * 2);
+                totalCost += (window.charStats['speed-a'] * 2);
+                totalCost += (window.charStats['dash-m'] * 3);
+                totalCost += (window.charStats['jump-p'] * 2);
+                totalCost += (window.charStats['fall-s'] * 2);
+                totalCost += (window.charStats['weight'] * 2);
+                totalCost += (window.charStats['jump-c'] * 10);
+
+                const jumpStartup = window.charStats['jump-startup'];
+                totalCost += (jumpStartup < 0) ? (-jumpStartup * 5) : (-jumpStartup * 3);
+
+                const landingLag = window.charStats['landing-lag'];
+                totalCost += (landingLag < 0) ? (-landingLag * 5) : (-landingLag * 2);
+            }
+
+            const selects = [
+                'sel-atk-neutral', 'sel-atk-side', 'sel-atk-down',
+                'sel-smash-neutral', 'sel-smash-side', 'sel-smash-down',
+                'sel-air-normal-neutral', 'sel-air-normal-up', 'sel-air-normal-down', 'sel-air-normal-side',
+                'sel-air-smash-neutral', 'sel-air-smash-side', 'sel-air-smash-up', 'sel-air-smash-down',
+                'sel-sp-n', 'sel-sp-side', 'sel-sp-up', 'sel-sp-down', 'sel-passive'
+            ];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.selectedIndex !== -1) {
+                    const opt = el.options[el.selectedIndex];
+                    if (opt) totalCost += parseInt(opt.getAttribute('data-cost')) || 0;
+                }
+            });
+
+            const passiveSelect = document.getElementById('sel-passive');
+            const isSelfHarmEquipped = passiveSelect && passiveSelect.value === 'p_self_harm';
+            const costLimit = isSelfHarmEquipped ? 120 : 100;
+
+            if (totalCost > costLimit) {
+                alert(`【コスト超過制限】\n現在の消費コスト（${totalCost} PT）が上限（${costLimit} PT）を超えています。\n\n「ファイターカスタマイズ」画面でパーツやステータスを調整してください。`);
+                return;
+            }
+
             currentSelectedMode = modeName;
 
-            // 💥【修正版】オンラインモード（PVP / PVPE）で対戦相手が未接続の場合の警告ガード
+            // 2. オンライン未接続ガード
             const isOnlineMode = modeName.includes("PVP") || modeName.includes("PVPE");
             if (isOnlineMode && (!p2p || !p2p.active)) {
                 const choice = confirm(
@@ -25869,23 +25830,20 @@ function drawCharacterShield(ctx, char, camera) {
                 );
 
                 if (!choice) {
-                    // キャンセルを押した場合は、画面下のP2Pコネクター位置へ自動でスムーズスクロール
                     const p2pBox = document.getElementById('p2p-my-id');
                     if (p2pBox) {
                         p2pBox.scrollIntoView({ behavior: 'smooth' });
                     }
-                    return; // ステージ選択へ進まずに処理を終了
+                    return;
                 }
             }
 
-            // 👇【ここから追加】ホストがステージ選択画面を開いたことをゲストへ自動通知！
             if (p2p.active && p2p.isHost && p2p.conn && p2p.conn.open) {
                 p2p.conn.send({
                     type: 'selecting_stage',
                     mode: modeName
                 });
             }
-            // 👆【ここまで追加】
 
             const headerEl = document.getElementById('stage-select-header');
             if (headerEl) {
@@ -25894,24 +25852,18 @@ function drawCharacterShield(ctx, char, camera) {
 
             const grid = document.querySelector('.stage-select-grid');
             if (grid && typeof stageDatabase !== 'undefined') {
-                grid.innerHTML = ''; // 既存のカードを一度リセット
+                grid.innerHTML = '';
 
-                // 💡 練習（ファイターテスト）の場合は、データベース上の「全14ステージ」を完全解放！
                 const isTestMode = modeName.includes("ファイターテスト");
 
                 Object.keys(stageDatabase).forEach(key => {
                     const stage = stageDatabase[key];
                     if (!stage) return;
 
-                    // テストモード以外（通常のPVP対戦やPVPE）の場合は、
-                    // ホームランステージ（飛距離専用滑走路）を選択肢から除外して誤起動を防ぐ
                     if (!isTestMode && key === 'homerun_stage') return;
 
-                    // 💡 データベース（nexus_data.js）に記述されている desc プロパティを直接読み出します。
-                    // もし未設定のステージがある場合は、安全なフォールバック用説明文を表示します。
                     const desc = stage.desc || "独自のギミックや空中足場が配置された戦闘ステージ。";
 
-                    // カードHTML要素の組み立て
                     const card = document.createElement('div');
                     card.className = 'stage-card';
                     card.style.background = '#111';
@@ -25927,7 +25879,6 @@ function drawCharacterShield(ctx, char, camera) {
                 <p style="font-size:12px; color:#aaa; margin-top:5px; line-height: 1.45;">${desc}</p>
             `;
 
-                    // カードにマウスオーバーした時のネオンシアン光彩の追加
                     card.addEventListener('mouseenter', () => {
                         card.style.borderColor = '#00ffcc';
                         card.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.3)';
@@ -25939,7 +25890,6 @@ function drawCharacterShield(ctx, char, camera) {
                         card.style.transform = 'skewX(-5deg)';
                     });
 
-                    // クリック時に選択されたステージで戦闘（テストモード）を開始
                     card.onclick = () => {
                         selectStageAndStart(key);
                     };
